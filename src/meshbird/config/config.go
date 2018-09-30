@@ -10,4 +10,5 @@ type Config struct {
 	Ip               string `default:"10.237.0.1/16"`
 	Mtu              int    `default:"9000"`
 	Verbose          int    `default:"0"`
+	ServerMode       int    `default:"0"`
 }

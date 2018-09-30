@@ -31,7 +31,7 @@ func NewApp(config config.Config) *App {
 }
 
 func (a *App) Run() error {
-	a.server = transport.NewServer(a.config.LocalAddr, a.config.LocalPrivateAddr, a, a.config.Key)
+	a.server = transport.NewServer("0.0.0.0:8080", a.config.LocalPrivateAddr, a, a.config.Key)
 	err := a.bootstrap()
 	if err != nil {
 		return err
@@ -86,11 +86,16 @@ func (a *App) bootstrap() error {
 			log.Printf("skip seed addr %s because it's local addr", seedAddr)
 			continue
 		}
-		peer := NewPeer(seedDC, seedAddr, a.config, a.getRoutes)
-		peer.Start()
-		a.mutex.Lock()
-		a.peers[seedAddr] = peer
-		a.mutex.Unlock()
+
+		//For server no need to make connection to client -gs
+		if a.config.ServerMode == 0 {
+			peer := NewPeer(seedDC, seedAddr, a.config, a.getRoutes)
+			peer.Start()
+
+			a.mutex.Lock()
+			a.peers[seedAddr] = peer
+			a.mutex.Unlock()
+		}
 	}
 	return nil
 }
