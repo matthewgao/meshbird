@@ -60,7 +60,7 @@ func (p *Peer) SendPing() {
 		Type: &protocol.Envelope_Ping{
 			Ping: &protocol.MessagePing{
 				Timestamp:        time.Now().UnixNano(),
-				LocalAddr:        p.config.LocalAddr,
+				LocalAddr:        p.config.SelfPublicAddr,
 				LocalPrivateAddr: p.config.LocalPrivateAddr,
 				DC:               "client",
 				IP:               ip.String(),
