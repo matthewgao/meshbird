@@ -109,7 +109,7 @@ func (a *App) bootstrap() error {
 
 	//For server no need to make connection to client -gs
 	// if a.config.ServerMode == 0 {
-	peer := NewPeer("server", a.config.RemoteAddrs, a.config, a.getRoutes)
+	peer := NewPeer("server", a.config.RemoteAddrs, a.config, a, a.getRoutes)
 	peer.Start()
 	a.client = peer
 	// a.mutex.Lock()

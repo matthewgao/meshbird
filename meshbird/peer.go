@@ -21,7 +21,7 @@ type Peer struct {
 	client     *transport.Client
 }
 
-func NewPeer(remoteDC, remoteAddr string, cfg config.Config, getRoutes func() []Route) *Peer {
+func NewPeer(remoteDC, remoteAddr string, cfg config.Config, handler transport.ServerHandler, getRoutes func() []Route) *Peer {
 	peer := &Peer{
 		remoteDC:   remoteDC,
 		remoteAddr: remoteAddr,
@@ -32,6 +32,8 @@ func NewPeer(remoteDC, remoteAddr string, cfg config.Config, getRoutes func() []
 	// } else {
 	peer.client = transport.NewClient(remoteAddr, cfg.Key, cfg.TransportThreads)
 	// }
+	peer.client.SetHandler(handler)
+
 	return peer
 }
 

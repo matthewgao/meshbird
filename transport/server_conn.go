@@ -30,11 +30,12 @@ type ServerConn struct {
 
 func NewServerConn(conn *net.TCPConn, key string, handler ServerHandler) *ServerConn {
 	return &ServerConn{
-		conn:    conn,
-		key:     key,
-		handler: handler,
-		nonce:   make([]byte, 12),
-		buf:     make([]byte, 65536),
+		conn:     conn,
+		key:      key,
+		handler:  handler,
+		nonce:    make([]byte, 12),
+		buf:      make([]byte, 65536),
+		writeBuf: &bytes.Buffer{},
 	}
 }
 

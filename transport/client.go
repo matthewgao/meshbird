@@ -15,6 +15,7 @@ type Client struct {
 	mutex      sync.RWMutex
 	serial     int64
 	wg         sync.WaitGroup
+	handler    ServerHandler
 }
 
 func NewClient(remoteAddr string, key string, threads int) *Client {
@@ -25,14 +26,21 @@ func NewClient(remoteAddr string, key string, threads int) *Client {
 	}
 }
 
+func (c *Client) SetHandler(handler ServerHandler) {
+	c.handler = handler
+}
+
 func (c *Client) Start() {
 	c.mutex.Lock()
 	c.conns = make([]*ClientConn, c.threads)
 	for connIndex := 0; connIndex < c.threads; connIndex++ {
 		c.wg.Add(1)
 		conn := NewClientConn(c.remoteAddr, c.key, connIndex, &c.wg)
+		conn.SetHander(c.handler)
 		c.conns[connIndex] = conn
+
 		go c.conns[connIndex].run()
+		go c.conns[connIndex].runRead()
 	}
 	c.mutex.Unlock()
 }
