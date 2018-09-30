@@ -1,5 +1,5 @@
-GOPATH=$(shell pwd)
-SEED_ADDRS="dc1/127.0.0.1:7001"
+# GOPATH=$(shell pwd)
+# SEED_ADDRS="dc1/127.0.0.1:7001"
 
 
 build:
@@ -22,4 +22,4 @@ run3:
 		--ip 10.237.0.3/16
 	
 deps:
-	GOPATH=$(shell pwd) go get -v meshbird/cmd
+	go get -v meshbird

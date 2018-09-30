@@ -33,11 +33,11 @@ func (a *App) Run() error {
 	a.server = transport.NewServer(a.config.LocalAddr, a.config.LocalPrivateAddr, a, a.config.Key)
 	a.server.SetConfig(a.config)
 
-	a.routes["10.4.4.2"] = Route{
-		LocalAddr:        "47.52.153.87:8080",
-		LocalPrivateAddr: "172.31.244.168:8081",
-		IP:               "10.4.4.2",
-		DC:               "dc1",
+	a.routes[a.config.RemoteLocalAddrs] = Route{
+		LocalAddr:        a.config.LocalAddr,
+		LocalPrivateAddr: a.config.LocalPrivateAddr,
+		IP:               a.config.Ip,
+		DC:               a.config.Dc,
 	}
 
 	err := a.bootstrap()
