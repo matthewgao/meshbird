@@ -5,30 +5,39 @@ import (
 	"log"
 	"net"
 	"time"
+
+	"meshbird/config"
 )
 
 type Server struct {
-	publicAddr    string
+	publicAddr  string
 	privateAddr string
-	handler ServerHandler
-	key     string
+	handler     ServerHandler
+	key         string
+	config      config.Config
 
-	publicListener *net.TCPListener
+	publicListener  *net.TCPListener
 	privateListener *net.TCPListener
 }
 
 func NewServer(publicAddr, privateAddr string, handler ServerHandler, key string) *Server {
 	srv := &Server{
-		publicAddr:    publicAddr,
-		privateAddr:   privateAddr,
-		handler: handler,
-		key:     key,
+		publicAddr:  publicAddr,
+		privateAddr: privateAddr,
+		handler:     handler,
+		key:         key,
 	}
 	return srv
 }
 
+func (s *Server) SetConfig(cfg config.Config) {
+	s.config = cfg
+}
+
 func (s *Server) Start() {
-	go s.processPublic()
+	if s.config.ServerMode == 1 {
+		go s.processPublic()
+	}
 	go s.processPrivate()
 }
 

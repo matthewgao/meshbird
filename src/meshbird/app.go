@@ -32,6 +32,7 @@ func NewApp(config config.Config) *App {
 
 func (a *App) Run() error {
 	a.server = transport.NewServer("0.0.0.0:8080", a.config.LocalPrivateAddr, a, a.config.Key)
+	a.server.SetConfig(a.config)
 	err := a.bootstrap()
 	if err != nil {
 		return err

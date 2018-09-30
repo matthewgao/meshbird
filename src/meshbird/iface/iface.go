@@ -2,25 +2,26 @@ package iface
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os/exec"
 	"strconv"
-	
+
 	"github.com/songgao/water"
 )
 
 type Iface struct {
-	name   string
-	ip     string
-	mtu    int
-	ifce   *water.Interface
+	name string
+	ip   string
+	mtu  int
+	ifce *water.Interface
 }
 
 func New(name, ip string, mtu int) *Iface {
 	return &Iface{
 		name: name,
-		ip: ip,
-		mtu: mtu,
+		ip:   ip,
+		mtu:  mtu,
 	}
 }
 
@@ -32,19 +33,25 @@ func (i *Iface) Start() error {
 	config := water.Config{
 		DeviceType: water.TUN,
 	}
-	//config.Name = i.name
+
 	i.ifce, err = water.New(config)
 	if err != nil {
 		return err
 	}
+
+	// time.Sleep(time.Minute)
+
+	log.Printf("command: %s", i.ifce.Name())
 	mask := netIP.Mask
 	netmask := fmt.Sprintf("%d.%d.%d.%d", mask[0], mask[1], mask[2], mask[3])
-	cmd := exec.Command("ifconfig", i.Name(), 
+	log.Printf("command: %s %s %s %s %s %s %s %s", "ifconfig", i.Name(), ip.String(), "netmask", netmask, "mtu", strconv.Itoa(i.mtu), "up")
+	cmd := exec.Command("ifconfig", i.Name(),
 		ip.String(), "netmask", netmask,
 		"mtu", strconv.Itoa(i.mtu), "up")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("err: %s %s", err, string(output))
+		// log.Printf("run ifconfig fail: %v, %s", err, string(output))
 	}
 	return nil
 }
