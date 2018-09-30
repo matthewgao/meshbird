@@ -111,7 +111,7 @@ func (a *App) bootstrap() error {
 	// if a.config.ServerMode == 0 {
 	peer := NewPeer("server", a.config.RemoteAddrs, a.config, a.getRoutes)
 	peer.Start()
-
+	a.client = peer
 	// a.mutex.Lock()
 	// a.peers[seedAddr] = peer
 	// a.mutex.Unlock()
