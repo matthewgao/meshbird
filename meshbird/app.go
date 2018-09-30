@@ -2,7 +2,6 @@ package meshbird
 
 import (
 	"log"
-	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
@@ -14,7 +13,8 @@ import (
 
 type App struct {
 	config config.Config
-	peers  map[string]*Peer
+	// peers  map[string]*Peer
+	client *Peer
 	routes map[string]Route
 	mutex  sync.RWMutex
 	server *transport.Server
@@ -24,7 +24,7 @@ type App struct {
 func NewApp(config config.Config) *App {
 	return &App{
 		config: config,
-		peers:  make(map[string]*Peer),
+		// peers:  make(map[string]*Peer),
 		routes: make(map[string]Route),
 	}
 }
@@ -32,6 +32,14 @@ func NewApp(config config.Config) *App {
 func (a *App) Run() error {
 	a.server = transport.NewServer(a.config.LocalAddr, a.config.LocalPrivateAddr, a, a.config.Key)
 	a.server.SetConfig(a.config)
+
+	a.routes["10.4.4.2"] = Route{
+		LocalAddr:        "47.52.153.87:8080",
+		LocalPrivateAddr: "172.31.244.168:8081",
+		IP:               "10.4.4.2",
+		DC:               "dc1",
+	}
+
 	err := a.bootstrap()
 	if err != nil {
 		return err
@@ -58,45 +66,57 @@ func (a *App) runIface() error {
 		src := pkt.GetSourceIP().String()
 		dst := pkt.GetDestinationIP().String()
 		if a.config.Verbose == 1 {
-			log.Printf("packet: src=%s dst=%s len=%d", src, dst, n)
+			log.Printf("tun packet: src=%s dst=%s len=%d", src, dst, n)
 		}
-		a.mutex.RLock()
-		peer, ok := a.peers[a.routes[dst].LocalAddr]
-		a.mutex.RUnlock()
-		if !ok {
-			if a.config.Verbose == 1 {
-				log.Printf("unknown destination, packet dropped")
+		// a.mutex.RLock()
+		// peer, ok := a.peers[a.routes[dst].LocalAddr]
+		if a.config.ServerMode == 1 {
+			log.Printf("receiver tun packet dst address is %s", dst)
+			conn, ok := a.server.Conns[a.routes[dst].LocalAddr]
+			if !ok {
+				if a.config.Verbose == 1 {
+					log.Printf("unknown destination, packet dropped")
+				}
+			} else {
+				conn.SendPacket(pkt)
 			}
 		} else {
-			peer.SendPacket(pkt)
+			//client send packet
+			a.client.SendPacket(pkt)
 		}
+		// a.mutex.RUnlock()
+
 	}
 }
 
 func (a *App) bootstrap() error {
-	seedAddrs := strings.Split(a.config.SeedAddrs, ",")
-	for _, seedAddr := range seedAddrs {
-		parts := strings.Split(seedAddr, "/")
-		if len(parts) < 2 {
-			continue
-		}
-		seedDC := parts[0]
-		seedAddr = parts[1]
-		if seedAddr == a.config.LocalAddr {
-			log.Printf("skip seed addr %s because it's local addr", seedAddr)
-			continue
-		}
-
-		//For server no need to make connection to client -gs
-		if a.config.ServerMode == 0 {
-			peer := NewPeer(seedDC, seedAddr, a.config, a.getRoutes)
-			peer.Start()
-
-			a.mutex.Lock()
-			a.peers[seedAddr] = peer
-			a.mutex.Unlock()
-		}
+	if a.config.ServerMode == 1 {
+		log.Printf("running in server mode, skip make connection to client")
+		return nil
 	}
+	// seedAddrs := strings.Split(a.config.SeedAddrs, ",")
+	// for _, seedAddr := range seedAddrs {
+	// 	parts := strings.Split(seedAddr, "/")
+	// 	if len(parts) < 2 {
+	// 		continue
+	// 	}
+	// 	seedDC := parts[0]
+	// 	seedAddr = parts[1]
+	// 	if seedAddr == a.config.LocalAddr {
+	// 		log.Printf("skip seed addr %s because it's local addr", seedAddr)
+	// 		continue
+	// 	}
+
+	//For server no need to make connection to client -gs
+	// if a.config.ServerMode == 0 {
+	peer := NewPeer("server", a.config.RemoteAddrs, a.config, a.getRoutes)
+	peer.Start()
+
+	// a.mutex.Lock()
+	// a.peers[seedAddr] = peer
+	// a.mutex.Unlock()
+	// }
+	// }
 	return nil
 }
 
@@ -130,21 +150,21 @@ func (a *App) OnData(buf []byte) {
 			IP:               ping.GetIP(),
 			DC:               ping.GetDC(),
 		}
-		if _, ok := a.peers[ping.GetLocalAddr()]; !ok {
-			var peer *Peer
-			if a.config.Dc == ping.GetDC() {
-				peer = NewPeer(ping.GetDC(), ping.GetLocalPrivateAddr(),
-					a.config, a.getRoutes)
-			} else {
-				peer = NewPeer(ping.GetDC(), ping.GetLocalAddr(),
-					a.config, a.getRoutes)
-			}
-			peer.Start()
-			a.peers[ping.GetLocalAddr()] = peer
-			if a.config.Verbose == 1 {
-				log.Printf("new peer %s", ping)
-			}
-		}
+		// if _, ok := a.peers[ping.GetLocalAddr()]; !ok {
+		// 	var peer *Peer
+		// 	if a.config.Dc == ping.GetDC() {
+		// 		peer = NewPeer(ping.GetDC(), ping.GetLocalPrivateAddr(),
+		// 			a.config, a.getRoutes)
+		// 	} else {
+		// 		peer = NewPeer(ping.GetDC(), ping.GetLocalAddr(),
+		// 			a.config, a.getRoutes)
+		// 	}
+		// 	peer.Start()
+		// 	a.peers[ping.GetLocalAddr()] = peer
+		// 	if a.config.Verbose == 1 {
+		// 		log.Printf("new peer %s", ping)
+		// 	}
+		// }
 		if a.config.Verbose == 1 {
 			log.Printf("routes %s", a.routes)
 		}

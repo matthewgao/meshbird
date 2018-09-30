@@ -41,7 +41,8 @@ func (s *Server) Start() {
 	if s.config.ServerMode == 1 {
 		go s.processPublic()
 	}
-	go s.processPrivate()
+	//Private is only use to get packet from local
+	// go s.processPrivate()
 }
 
 func (s *Server) processPublic() {

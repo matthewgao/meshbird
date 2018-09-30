@@ -27,11 +27,11 @@ func NewPeer(remoteDC, remoteAddr string, cfg config.Config, getRoutes func() []
 		remoteAddr: remoteAddr,
 		config:     cfg,
 	}
-	if remoteDC == cfg.Dc {
-		peer.client = transport.NewClient(remoteAddr, "", cfg.TransportThreads)
-	} else {
-		peer.client = transport.NewClient(remoteAddr, cfg.Key, cfg.TransportThreads)
-	}
+	// if remoteDC == cfg.Dc {
+	// 	peer.client = transport.NewClient(remoteAddr, "", cfg.TransportThreads)
+	// } else {
+	peer.client = transport.NewClient(remoteAddr, cfg.Key, cfg.TransportThreads)
+	// }
 	return peer
 }
 
@@ -62,7 +62,7 @@ func (p *Peer) SendPing() {
 				Timestamp:        time.Now().UnixNano(),
 				LocalAddr:        p.config.LocalAddr,
 				LocalPrivateAddr: p.config.LocalPrivateAddr,
-				DC:               p.config.Dc,
+				DC:               "client",
 				IP:               ip.String(),
 			},
 		},

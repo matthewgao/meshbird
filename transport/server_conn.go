@@ -2,23 +2,30 @@ package transport
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/cipher"
+	crand "crypto/rand"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"log"
 	"net"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/matthewgao/meshbird/iface"
+	"github.com/matthewgao/meshbird/protocol"
 	"github.com/matthewgao/meshbird/utils"
 )
 
 type ServerConn struct {
-	conn    *net.TCPConn
-	key     string
-	nonce   []byte
-	buf     []byte
-	aesgcm  cipher.AEAD
-	handler ServerHandler
-	reader  *bufio.Reader
+	conn     *net.TCPConn
+	key      string
+	nonce    []byte
+	buf      []byte
+	aesgcm   cipher.AEAD
+	handler  ServerHandler
+	reader   *bufio.Reader
+	writeBuf *bytes.Buffer
 }
 
 func NewServerConn(conn *net.TCPConn, key string, handler ServerHandler) *ServerConn {
@@ -99,4 +106,71 @@ func (sc *ServerConn) read() ([]byte, error) {
 		}
 		return plain, nil
 	}
+}
+
+func (cc *ServerConn) write(data []byte) error {
+	if cc.conn == nil {
+		return fmt.Errorf("no connection")
+	}
+	var err error
+	cc.writeBuf.Reset()
+	var secure uint8 = 0
+	if cc.aesgcm != nil {
+		secure = 1
+	}
+	err = binary.Write(cc.writeBuf, binary.LittleEndian, &secure)
+	if err != nil {
+		return err
+	}
+	if secure == 0 {
+		dataLen := uint16(len(data))
+		err = binary.Write(cc.writeBuf, binary.LittleEndian, &dataLen)
+		if err != nil {
+			return err
+		}
+		_, err = cc.writeBuf.Write(data)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err = io.ReadFull(crand.Reader, cc.nonce)
+		if err != nil {
+			return err
+		}
+		data2 := cc.aesgcm.Seal(nil, cc.nonce, data, nil)
+		dataLen := uint16(len(data2))
+		err = binary.Write(cc.writeBuf, binary.LittleEndian, &dataLen)
+		if err != nil {
+			return err
+		}
+		_, err = cc.writeBuf.Write(data2)
+		if err != nil {
+			return err
+		}
+		_, err = cc.writeBuf.Write(cc.nonce)
+		if err != nil {
+			return err
+		}
+	}
+	if err == nil {
+		_, err = cc.writeBuf.WriteTo(cc.conn)
+	}
+	return err
+}
+
+// func (cc *ServerConn) Write(data []byte) {
+// 	cc.chanWrite <- data
+// }
+
+func (cc *ServerConn) WriteNow(data []byte) error {
+	return cc.write(data)
+}
+
+func (sc *ServerConn) SendPacket(pkt iface.PacketIP) {
+	data, _ := proto.Marshal(&protocol.Envelope{
+		Type: &protocol.Envelope_Packet{
+			Packet: &protocol.MessagePacket{Payload: pkt},
+		},
+	})
+	sc.WriteNow(data)
 }
