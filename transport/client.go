@@ -40,6 +40,7 @@ func (c *Client) Start() {
 		c.conns[connIndex] = conn
 
 		go c.conns[connIndex].run()
+		time.Sleep(time.Second) // FIXME:
 		go c.conns[connIndex].runRead()
 	}
 	c.mutex.Unlock()
