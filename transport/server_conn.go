@@ -39,12 +39,13 @@ func NewServerConn(conn *net.TCPConn, key string, handler ServerHandler) *Server
 	}
 }
 
-func (sc *ServerConn) run() {
+func (sc *ServerConn) run(cleanup func()) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("server conn run err: %s", err)
 		}
 		sc.conn.Close()
+		cleanup()
 	}()
 	var err error
 	err = sc.crypto()

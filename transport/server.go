@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/matthewgao/meshbird/config"
@@ -19,6 +20,7 @@ type Server struct {
 	publicListener  *net.TCPListener
 	privateListener *net.TCPListener
 
+	Mtx   *sync.Mutex
 	Conns map[string]*ServerConn
 }
 
@@ -29,6 +31,7 @@ func NewServer(publicAddr, privateAddr string, handler ServerHandler, key string
 		handler:     handler,
 		key:         key,
 		Conns:       make(map[string]*ServerConn),
+		Mtx:         &sync.Mutex{},
 	}
 	return srv
 }
@@ -109,8 +112,29 @@ func (s *Server) listen(tcpAddr *net.TCPAddr) error {
 		} else {
 			log.Printf("new accept from %s", tcpConn.RemoteAddr())
 			serverConn := NewServerConn(tcpConn, s.key, s.handler)
-			s.Conns[tcpConn.RemoteAddr().String()] = serverConn
-			go serverConn.run()
+			//FIXME:have to control only one can connect to this now
+			remoteAddr := tcpConn.RemoteAddr().String()
+			log.Printf("add to conn map, %s:%v", remoteAddr, serverConn)
+			log.Printf("dump conn map, %v", s.Conns)
+
+			s.Mtx.Lock()
+			s.Conns[remoteAddr] = serverConn
+			s.Mtx.Unlock()
+			go serverConn.run(func() {
+				s.Mtx.Lock()
+				delete(s.Conns, remoteAddr)
+				s.Mtx.Unlock()
+			})
 		}
 	}
+}
+
+func (s *Server) GetConnsByAddr(dst string) *ServerConn {
+	s.Mtx.Lock()
+	defer s.Mtx.Unlock()
+	conn, ok := s.Conns[dst]
+	if ok {
+		return conn
+	}
+	return nil
 }

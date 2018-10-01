@@ -47,6 +47,7 @@ func NewClientConn(remoteAddr, key string, index int, parentWG *sync.WaitGroup) 
 		parentWG:   parentWG,
 		nonce:      make([]byte, 12),
 		buf:        &bytes.Buffer{},
+		readBuf:    make([]byte, 65536),
 	}
 }
 
@@ -236,7 +237,7 @@ func (cc *ClientConn) WriteNow(data []byte) error {
 func (sc *ClientConn) runRead() {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("server conn run err: %s", err)
+			log.Printf("runRead:client conn run err: %s", err)
 		}
 		sc.conn.Close()
 	}()
@@ -252,7 +253,7 @@ func (sc *ClientConn) runRead() {
 	for {
 		data, err := sc.read()
 		if err != nil {
-			log.Printf("server conn read err: %s", err)
+			log.Printf("runRead:client conn read err: %s", err)
 			return
 		}
 		if sc.handler != nil {

@@ -72,8 +72,8 @@ func (a *App) runIface() error {
 		// peer, ok := a.peers[a.routes[dst].LocalAddr]
 		if a.config.ServerMode == 1 {
 			log.Printf("receiver tun packet dst address is %s %v %s", dst, a.server.Conns, a.routes[dst].LocalAddr)
-			conn, ok := a.server.Conns[a.routes[dst].LocalAddr]
-			if !ok {
+			conn := a.server.GetConnsByAddr(a.routes[dst].LocalAddr)
+			if conn == nil {
 				if a.config.Verbose == 1 {
 					log.Printf("unknown destination, packet dropped")
 				}
