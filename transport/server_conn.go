@@ -174,5 +174,9 @@ func (sc *ServerConn) SendPacket(pkt iface.PacketIP) {
 			Packet: &protocol.MessagePacket{Payload: pkt},
 		},
 	})
-	sc.WriteNow(data)
+
+	err := sc.WriteNow(data)
+	if err != nil {
+		log.Printf("sever send packet fail %v", err)
+	}
 }
