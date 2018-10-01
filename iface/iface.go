@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os/exec"
+	"runtime"
 	"strconv"
 
 	"github.com/songgao/water"
@@ -45,9 +46,17 @@ func (i *Iface) Start() error {
 	mask := netIP.Mask
 	netmask := fmt.Sprintf("%d.%d.%d.%d", mask[0], mask[1], mask[2], mask[3])
 	log.Printf("command: %s %s %s %s %s %s %s %s", "ifconfig", i.Name(), ip.String(), "netmask", netmask, "mtu", strconv.Itoa(i.mtu), "up")
-	cmd := exec.Command("ifconfig", i.Name(),
-		ip.String(), "netmask", netmask,
-		"mtu", strconv.Itoa(i.mtu), "up")
+	var cmd *exec.Cmd
+	if runtime.GOOS == "darwin" {
+		cmd = exec.Command("ifconfig", i.Name(),
+			ip.String(), ip.String(), "netmask", netmask,
+			"mtu", strconv.Itoa(i.mtu), "up")
+	} else {
+		cmd = exec.Command("ifconfig", i.Name(),
+			ip.String(), "netmask", netmask,
+			"mtu", strconv.Itoa(i.mtu), "up")
+	}
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("err: %s %s", err, string(output))

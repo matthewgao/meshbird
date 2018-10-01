@@ -113,6 +113,7 @@ func (cc *ClientConn) run() {
 			time.Sleep(time.Millisecond * 1000)
 		} else {
 			if err == nil {
+				go cc.runRead()
 				err = cc.process()
 				if err == nil {
 					break
