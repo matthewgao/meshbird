@@ -114,12 +114,12 @@ func (s *Server) listen(tcpAddr *net.TCPAddr) error {
 			serverConn := NewServerConn(tcpConn, s.key, s.handler)
 			//FIXME:have to control only one can connect to this now
 			remoteAddr := tcpConn.RemoteAddr().String()
-			log.Printf("add to conn map, %s:%v", remoteAddr, serverConn)
+			log.Printf("add to conn map, %s", remoteAddr)
 			log.Printf("dump conn map, %v", s.Conns)
 
-			s.Mtx.Lock()
-			s.Conns[remoteAddr] = serverConn
-			s.Mtx.Unlock()
+			// s.Mtx.Lock()
+			// s.Conns[remoteAddr] = serverConn
+			// s.Mtx.Unlock()
 			go serverConn.run(func() {
 				s.Mtx.Lock()
 				delete(s.Conns, remoteAddr)
