@@ -22,16 +22,16 @@ type Peer struct {
 	client     *transport.Client
 }
 
-func NewPeer(remoteDC, remoteAddr string, cfg config.Config, handler transport.ServerHandler, getRoutes func() []Route) *Peer {
+func NewPeer(remoteDC string, remoteAddr string, cfg config.Config, handler transport.ServerHandler) *Peer {
 	peer := &Peer{
 		remoteDC:   remoteDC,
 		remoteAddr: remoteAddr,
 		config:     cfg,
+		client:     transport.NewClient(remoteAddr, cfg.Key, cfg.TransportThreads),
 	}
 	// if remoteDC == cfg.Dc {
 	// 	peer.client = transport.NewClient(remoteAddr, "", cfg.TransportThreads)
 	// } else {
-	peer.client = transport.NewClient(remoteAddr, cfg.Key, cfg.TransportThreads)
 	// }
 	peer.client.SetHandler(handler)
 	return peer
@@ -55,7 +55,7 @@ func (p *Peer) process() {
 	}
 }
 
-func (p *Peer) GetRealLocalAddrWithPort() string {
+func (p *Peer) GetTunLocalAddrWithPort() string {
 	return fmt.Sprintf("%s:%s", p.config.Ip, p.client.GetRemotePortRandom())
 }
 
@@ -66,7 +66,7 @@ func (p *Peer) SendPing() {
 		Type: &protocol.Envelope_Ping{
 			Ping: &protocol.MessagePing{
 				Timestamp:        time.Now().UnixNano(),
-				LocalAddr:        p.GetRealLocalAddrWithPort(), //唯一的表示一个CLINET端
+				LocalAddr:        p.GetTunLocalAddrWithPort(), //唯一的表示一个CLINET端
 				LocalPrivateAddr: "not_use",
 				DC:               "client",
 				IP:               ip.String(),

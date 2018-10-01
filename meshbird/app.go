@@ -31,25 +31,28 @@ func NewApp(config config.Config) *App {
 }
 
 func (a *App) Run() error {
-	a.server = transport.NewServer(a.config.Listen, "not_use_private_address", a, a.config.Key)
-	a.server.SetConfig(a.config)
+	if a.config.ServerMode == 1 {
+		a.server = transport.NewServer(a.config.Listen, "not_use_private_address", a, a.config.Key)
+		a.server.SetConfig(a.config)
 
-	// a.routes[a.config.RemoteLocalAddrs] = Route{
-	// 	LocalAddr:        a.config.SelfPublicAddr,
-	// 	LocalPrivateAddr: a.config.LocalPrivateAddr,
-	// 	IP:               a.config.Ip,
-	// 	DC:               a.config.Dc,
-	// }
-
-	err := a.bootstrap()
-	if err != nil {
-		return err
+		// a.routes[a.config.RemoteLocalAddrs] = Route{
+		// 	LocalAddr:        a.config.SelfPublicAddr,
+		// 	LocalPrivateAddr: a.config.LocalPrivateAddr,
+		// 	IP:               a.config.Ip,
+		// 	DC:               a.config.Dc,
+		// }
+		go a.server.Start()
+	} else {
+		err := a.InitClient()
+		if err != nil {
+			return err
+		}
 	}
-	go a.server.Start()
-	return a.runIface()
+
+	return a.StartFetchTunInterface()
 }
 
-func (a *App) runIface() error {
+func (a *App) StartFetchTunInterface() error {
 	a.iface = iface.New("", a.config.Ip, a.config.Mtu)
 	err := a.iface.Start()
 	if err != nil {
@@ -72,7 +75,7 @@ func (a *App) runIface() error {
 		// a.mutex.RLock()
 		// peer, ok := a.peers[a.routes[dst].LocalAddr]
 		if a.config.ServerMode == 1 {
-			log.Printf("receiver tun packet dst address is %s %v %s", dst, a.server.Conns, a.routes[dst].LocalAddr)
+			log.Printf("receiver tun packet dst address  dst=%s, route_local_addr=%s", dst, a.routes[dst].LocalAddr)
 			conn := a.server.GetConnsByAddr(a.routes[dst].LocalAddr)
 			if conn == nil {
 				if a.config.Verbose == 1 {
@@ -90,7 +93,7 @@ func (a *App) runIface() error {
 	}
 }
 
-func (a *App) bootstrap() error {
+func (a *App) InitClient() error {
 	if a.config.ServerMode == 1 {
 		log.Printf("running in server mode, skip make connection to client")
 		return nil
@@ -110,7 +113,7 @@ func (a *App) bootstrap() error {
 
 	//For server no need to make connection to client -gs
 	// if a.config.ServerMode == 0 {
-	peer := NewPeer("server", a.config.RemoteAddrs, a.config, a, a.getRoutes)
+	peer := NewPeer("server", a.config.RemoteAddrs, a.config, a)
 	peer.Start()
 	a.client = peer
 	// a.mutex.Lock()
