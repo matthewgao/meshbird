@@ -31,15 +31,15 @@ func NewApp(config config.Config) *App {
 }
 
 func (a *App) Run() error {
-	a.server = transport.NewServer(a.config.Listen, a.config.LocalPrivateAddr, a, a.config.Key)
+	a.server = transport.NewServer(a.config.Listen, "not_use_private_address", a, a.config.Key)
 	a.server.SetConfig(a.config)
 
-	a.routes[a.config.RemoteLocalAddrs] = Route{
-		LocalAddr:        a.config.SelfPublicAddr,
-		LocalPrivateAddr: a.config.LocalPrivateAddr,
-		IP:               a.config.Ip,
-		DC:               a.config.Dc,
-	}
+	// a.routes[a.config.RemoteLocalAddrs] = Route{
+	// 	LocalAddr:        a.config.SelfPublicAddr,
+	// 	LocalPrivateAddr: a.config.LocalPrivateAddr,
+	// 	IP:               a.config.Ip,
+	// 	DC:               a.config.Dc,
+	// }
 
 	err := a.bootstrap()
 	if err != nil {

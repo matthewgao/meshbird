@@ -67,7 +67,7 @@ func (p *Peer) SendPing() {
 			Ping: &protocol.MessagePing{
 				Timestamp:        time.Now().UnixNano(),
 				LocalAddr:        p.GetRealLocalAddrWithPort(), //唯一的表示一个CLINET端
-				LocalPrivateAddr: p.config.LocalPrivateAddr,
+				LocalPrivateAddr: "not_use",
 				DC:               "client",
 				IP:               ip.String(),
 			},
