@@ -2,6 +2,7 @@ package meshbird
 
 import (
 	"log"
+	"net"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
@@ -132,7 +133,7 @@ func (a *App) getRoutes() []Route {
 	return routes
 }
 
-func (a *App) OnData(buf []byte) {
+func (a *App) OnData(buf []byte, conn *net.TCPConn) {
 	ep := protocol.Envelope{}
 	err := proto.Unmarshal(buf, &ep)
 	if err != nil {
@@ -150,6 +151,8 @@ func (a *App) OnData(buf []byte) {
 			IP:               ping.GetIP(),
 			DC:               ping.GetDC(),
 		}
+
+		a.server.SetConns(a.routes[ping.GetIP()].LocalAddr, conn)
 		// if _, ok := a.peers[ping.GetLocalAddr()]; !ok {
 		// 	var peer *Peer
 		// 	if a.config.Dc == ping.GetDC() {

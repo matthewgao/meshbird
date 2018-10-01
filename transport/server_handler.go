@@ -1,5 +1,7 @@
 package transport
 
+import "net"
+
 type ServerHandler interface {
-	OnData([]byte)
+	OnData([]byte, *net.TCPConn)
 }

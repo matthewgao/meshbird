@@ -138,3 +138,9 @@ func (s *Server) GetConnsByAddr(dst string) *ServerConn {
 	}
 	return nil
 }
+
+func (s *Server) SetConns(dst string, conns *net.TCPConn) {
+	s.Mtx.Lock()
+	defer s.Mtx.Unlock()
+	s.Conns[dst] = NewServerConn(conns, s.key, s.handler)
+}

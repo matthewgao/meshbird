@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -257,7 +258,7 @@ func (sc *ClientConn) runRead() {
 			return
 		}
 		if sc.handler != nil {
-			sc.handler.OnData(data)
+			sc.handler.OnData(data, sc.conn)
 		}
 	}
 }
@@ -290,6 +291,18 @@ func (sc *ClientConn) read() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return plain, nil
 	}
+}
+
+//为了使用 10.4.4.3:port 这样的格式来表示一条tcp连接
+func (sc *ClientConn) GetConnPort() string {
+	fullWithPort := sc.conn.LocalAddr().String()
+	addrPair := strings.Split(fullWithPort, ":")
+	log.Printf("get local tcp addr %s", fullWithPort)
+	if len(addrPair) < 2 {
+		panic("fail to get local tcp port")
+	}
+	return addrPair[1]
 }

@@ -1,6 +1,7 @@
 package meshbird
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -33,7 +34,6 @@ func NewPeer(remoteDC, remoteAddr string, cfg config.Config, handler transport.S
 	peer.client = transport.NewClient(remoteAddr, cfg.Key, cfg.TransportThreads)
 	// }
 	peer.client.SetHandler(handler)
-
 	return peer
 }
 
@@ -55,6 +55,10 @@ func (p *Peer) process() {
 	}
 }
 
+func (p *Peer) GetRealLocalAddrWithPort() string {
+	return fmt.Sprintf("%s:%s", p.config.Ip, p.GetRealLocalAddrWithPort())
+}
+
 func (p *Peer) SendPing() {
 	ip, _, err := net.ParseCIDR(p.config.Ip)
 	utils.POE(err)
@@ -62,7 +66,7 @@ func (p *Peer) SendPing() {
 		Type: &protocol.Envelope_Ping{
 			Ping: &protocol.MessagePing{
 				Timestamp:        time.Now().UnixNano(),
-				LocalAddr:        p.config.SelfPublicAddr,
+				LocalAddr:        p.GetRealLocalAddrWithPort(), //唯一的表示一个CLINET端
 				LocalPrivateAddr: p.config.LocalPrivateAddr,
 				DC:               "client",
 				IP:               ip.String(),

@@ -63,7 +63,7 @@ func (sc *ServerConn) run(cleanup func()) {
 			return
 		}
 		if sc.handler != nil {
-			sc.handler.OnData(data)
+			sc.handler.OnData(data, sc.conn)
 		}
 	}
 }
