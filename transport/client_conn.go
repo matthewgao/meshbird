@@ -90,16 +90,6 @@ func (cc *ClientConn) crypto() (err error) {
 	return
 }
 
-// func (sc *ClientConn) crypto() error {
-// 	if sc.key == "" {
-// 		log.Printf("incoming encryption disabled for %s", sc.conn.RemoteAddr())
-// 		return nil
-// 	}
-// 	var err error
-// 	sc.aesgcm, err = makeAES128GCM(sc.key)
-// 	return err
-// }
-
 func (cc *ClientConn) run() {
 	defer func() {
 		if err := recover(); err != nil {

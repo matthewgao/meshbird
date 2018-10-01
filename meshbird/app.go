@@ -14,7 +14,6 @@ import (
 
 type App struct {
 	config config.Config
-	// peers  map[string]*Peer
 	client *Peer
 	routes map[string]Route
 	mutex  sync.RWMutex
@@ -25,7 +24,6 @@ type App struct {
 func NewApp(config config.Config) *App {
 	return &App{
 		config: config,
-		// peers:  make(map[string]*Peer),
 		routes: make(map[string]Route),
 	}
 }
@@ -34,13 +32,6 @@ func (a *App) Run() error {
 	if a.config.ServerMode == 1 {
 		a.server = transport.NewServer(a.config.Listen, "not_use_private_address", a, a.config.Key)
 		a.server.SetConfig(a.config)
-
-		// a.routes[a.config.RemoteLocalAddrs] = Route{
-		// 	LocalAddr:        a.config.SelfPublicAddr,
-		// 	LocalPrivateAddr: a.config.LocalPrivateAddr,
-		// 	IP:               a.config.Ip,
-		// 	DC:               a.config.Dc,
-		// }
 		go a.server.Start()
 	} else {
 		err := a.InitClient()
@@ -94,33 +85,11 @@ func (a *App) StartFetchTunInterface() error {
 }
 
 func (a *App) InitClient() error {
-	if a.config.ServerMode == 1 {
-		log.Printf("running in server mode, skip make connection to client")
-		return nil
-	}
-	// seedAddrs := strings.Split(a.config.SeedAddrs, ",")
-	// for _, seedAddr := range seedAddrs {
-	// 	parts := strings.Split(seedAddr, "/")
-	// 	if len(parts) < 2 {
-	// 		continue
-	// 	}
-	// 	seedDC := parts[0]
-	// 	seedAddr = parts[1]
-	// 	if seedAddr == a.config.LocalAddr {
-	// 		log.Printf("skip seed addr %s because it's local addr", seedAddr)
-	// 		continue
-	// 	}
-
 	//For server no need to make connection to client -gs
 	// if a.config.ServerMode == 0 {
-	peer := NewPeer("server", a.config.RemoteAddrs, a.config, a)
+	peer := NewPeer(a.config, a)
 	peer.Start()
 	a.client = peer
-	// a.mutex.Lock()
-	// a.peers[seedAddr] = peer
-	// a.mutex.Unlock()
-	// }
-	// }
 	return nil
 }
 
@@ -147,30 +116,14 @@ func (a *App) OnData(buf []byte, conn *net.TCPConn) {
 	case *protocol.Envelope_Ping:
 		ping := ep.GetPing()
 		//log.Printf("received ping: %s", ping.String())
+		//根据Client发来的Ping包信息来添加路由
 		a.mutex.Lock()
 		a.routes[ping.GetIP()] = Route{
-			LocalAddr:        ping.GetLocalAddr(),
-			LocalPrivateAddr: ping.GetLocalPrivateAddr(),
-			IP:               ping.GetIP(),
-			DC:               ping.GetDC(),
+			LocalAddr: ping.GetLocalAddr(),
+			IP:        ping.GetIP(),
 		}
 
 		a.server.SetConns(a.routes[ping.GetIP()].LocalAddr, conn)
-		// if _, ok := a.peers[ping.GetLocalAddr()]; !ok {
-		// 	var peer *Peer
-		// 	if a.config.Dc == ping.GetDC() {
-		// 		peer = NewPeer(ping.GetDC(), ping.GetLocalPrivateAddr(),
-		// 			a.config, a.getRoutes)
-		// 	} else {
-		// 		peer = NewPeer(ping.GetDC(), ping.GetLocalAddr(),
-		// 			a.config, a.getRoutes)
-		// 	}
-		// 	peer.Start()
-		// 	a.peers[ping.GetLocalAddr()] = peer
-		// 	if a.config.Verbose == 1 {
-		// 		log.Printf("new peer %s", ping)
-		// 	}
-		// }
 		if a.config.Verbose == 1 {
 			log.Printf("routes %s", a.routes)
 		}

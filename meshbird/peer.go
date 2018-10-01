@@ -16,23 +16,19 @@ import (
 )
 
 type Peer struct {
-	remoteDC   string
+	// remoteDC   string
 	remoteAddr string
 	config     config.Config
 	client     *transport.Client
 }
 
-func NewPeer(remoteDC string, remoteAddr string, cfg config.Config, handler transport.ServerHandler) *Peer {
+func NewPeer(cfg config.Config, handler transport.ServerHandler) *Peer {
 	peer := &Peer{
-		remoteDC:   remoteDC,
-		remoteAddr: remoteAddr,
+		remoteAddr: cfg.RemoteAddrs,
 		config:     cfg,
-		client:     transport.NewClient(remoteAddr, cfg.Key, cfg.TransportThreads),
+		client:     transport.NewClient(cfg.RemoteAddrs, cfg.Key, cfg.TransportThreads),
 	}
-	// if remoteDC == cfg.Dc {
-	// 	peer.client = transport.NewClient(remoteAddr, "", cfg.TransportThreads)
-	// } else {
-	// }
+
 	peer.client.SetHandler(handler)
 	return peer
 }
@@ -48,7 +44,7 @@ func (p *Peer) process() {
 			log.Printf("peer process panic: %s", err)
 		}
 	}()
-	tickerPing := time.NewTicker(time.Second)
+	tickerPing := time.NewTicker(time.Second * 2)
 	defer tickerPing.Stop()
 	for range tickerPing.C {
 		p.SendPing()
