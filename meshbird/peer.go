@@ -56,7 +56,7 @@ func (p *Peer) process() {
 }
 
 func (p *Peer) GetRealLocalAddrWithPort() string {
-	return fmt.Sprintf("%s:%s", p.config.Ip, p.GetRealLocalAddrWithPort())
+	return fmt.Sprintf("%s:%s", p.config.Ip, p.client.GetRemotePortRandom())
 }
 
 func (p *Peer) SendPing() {
